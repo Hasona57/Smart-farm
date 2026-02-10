@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Farm Dashboard 🌱</title>
+<link rel="icon" href="https://cdn-icons-png.flaticon.com/512/427/427735.png">
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+/* ===== Global ===== */
+* {box-sizing:border-box;margin:0;padding:0;}
+body {
+  font-family:'Roboto',sans-serif;
+  background: linear-gradient(135deg,#a8edea,#fed6e3);
+  color:#333;
+  min-height:100vh;
+}
+.container {
+  max-width:1200px;
+  margin:20px auto;
+  padding:20px;
+  backdrop-filter:blur(15px);
+  background: rgba(255,255,255,0.2);
+  border-radius:25px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.25);
+}
+h1 {
+  text-align:center;
+  font-size:2.8rem;
+  margin-bottom:30px;
+  color:#2c3e50;
+  text-shadow:1px 1px 2px #fff;
+}
+.cards {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:25px;
+}
+
+/* ===== Card ===== */
+.card {
+  background: rgba(255,255,255,0.3);
+  border-radius:20px;
+  padding:25px;
+  text-align:center;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  box-shadow:0 8px 25px rgba(0,0,0,0.2);
+}
+.card:hover {
+  transform:translateY(-5px) scale(1.03);
+  box-shadow:0 10px 30px rgba(0,0,0,0.3);
+}
+.card h3 {
+  margin-bottom:20px;
+  font-size:1.5rem;
+}
+
+/* ===== Status Badges ===== */
+.status, .badge {
+  font-weight:700;
+  font-size:1.2rem;
+  padding:6px 12px;
+  border-radius:12px;
+  color:#fff;
+  display:inline-block;
+  min-width:80px;
+}
+.status.healthy{background:#27ae60;}
+.status.deceased{background:#c0392b;}
+.status.unknown{background:#7f8c8d;}
+.badge.on{background:#27ae60;}
+.badge.off{background:#c0392b;}
+.badge.auto{background:#f39c12;}
+.badge.manual{background:#3498db;}
+
+/* ===== Buttons ===== */
+button {
+  padding:10px 20px;
+  margin:5px;
+  font-size:1rem;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  color:#fff;
+  font-weight:600;
+  transition:0.3s ease;
+}
+button:hover{opacity:0.85;transform:scale(1.05);}
+button.on{background:#27ae60;}
+button.off{background:#c0392b;}
+button.auto{background:#f39c12;}
+button.manual{background:#3498db;}
+
+/* ===== Manual Controls ===== */
+#manualControls{display:none;margin-top:15px;}
+
+/* ===== Footer ===== */
+.footer{text-align:center;margin-top:40px;font-size:0.9rem;color:#2c3e50;}
+
+/* ===== Responsive ===== */
+@media (max-width:768px){
+  h1{font-size:2rem;margin-bottom:20px;}
+  .card{padding:20px;}
+  .status,.badge{min-width:70px;font-size:1rem;padding:5px 10px;}
+  button{padding:8px 16px;font-size:0.95rem;}
+}
+
+@media (max-width:480px){
+  .container{padding:15px;margin:10px;}
+  .cards{gap:15px;}
+  .card h3{font-size:1.3rem;}
+  h1{font-size:1.8rem;margin-bottom:15px;}
+  .status,.badge{font-size:0.95rem;padding:4px 8px;}
+  button{padding:6px 12px;font-size:0.9rem;}
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+<h1>🌱 Smart Farm Dashboard</h1>
+
+<div class="cards">
+  <div class="card">
+    <h3>Plant Status</h3>
+    <div id="plantStatus" class="status unknown">---</div>
+  </div>
+
+  <div class="card">
+    <h3>Soil Moisture</h3>
+    <div id="soilValue" class="status unknown">---</div>
+  </div>
+
+  <div class="card">
+    <h3>Pump Status</h3>
+    <div>Pump OUT: <span id="pumpOut" class="badge off">---</span></div>
+    <div>Pump IN: <span id="pumpIn" class="badge off">---</span></div>
+    <div>Mode: <span id="pumpModeDisplay" class="badge auto">---</span></div>
+  </div>
+
+  <div class="card">
+    <h3>Set Pump Mode</h3>
+    <div>
+      <button id="btnAuto" class="auto">AUTO</button>
+      <button id="btnManual" class="manual">MANUAL</button>
+    </div>
+    <div id="manualControls">
+      <h4>Manual Pump Control</h4>
+      <button id="btnOutOn" class="on">Pump OUT ON</button>
+      <button id="btnOutOff" class="off">Pump OUT OFF</button>
+      <button id="btnInOn" class="on">Pump IN ON</button>
+      <button id="btnInOff" class="off">Pump IN OFF</button>
+    </div>
+  </div>
+</div>
+
+<div class="footer">&copy; 2026 Smart Farm | Live IoT Dashboard</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyB654P2Pdrx7EUkD1RmLFIZq5jFo2RAki4",
+  authDomain: "plant-88f01.firebaseapp.com",
+  databaseURL: "https://plant-88f01-default-rtdb.firebaseio.com",
+  projectId: "plant-88f01",
+  storageBucket: "plant-88f01.appspot.com"
+};
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+/* ===== LIVE DATA ===== */
+onValue(ref(db, "/plant/status"), snap => {
+  const val = snap.val() || "unknown";
+  const el = document.getElementById("plantStatus");
+  el.textContent = val.toUpperCase();
+  el.className = `status ${val}`;
+});
+
+onValue(ref(db, "/sensor/soil"), snap => {
+  document.getElementById("soilValue").textContent = snap.val() || "---";
+});
+
+onValue(ref(db, "/state/pump_out"), snap => {
+  const val = snap.val() || "off";
+  const el = document.getElementById("pumpOut");
+  el.textContent = val.toUpperCase();
+  el.className = `badge ${val}`;
+});
+
+onValue(ref(db, "/state/pump_in"), snap => {
+  const val = snap.val() || "off";
+  const el = document.getElementById("pumpIn");
+  el.textContent = val.toUpperCase();
+  el.className = `badge ${val}`;
+});
+
+onValue(ref(db,"/control/pump_mode"), snap => {
+  const val = snap.val() || "auto";
+  document.getElementById("pumpModeDisplay").textContent = val.toUpperCase();
+  document.getElementById("manualControls").style.display = val=="manual"?"block":"none";
+});
+
+/* ===== GLOBAL FUNCTIONS ===== */
+window.setPump = (mode)=>{ set(ref(db,"/control/pump_mode"),mode); }
+window.setPumpManual = (pump,state)=>{ set(ref(db,`/control/manual/${pump}`),state); }
+
+/* ===== BUTTON EVENT LISTENERS ===== */
+document.getElementById("btnAuto").addEventListener("click", ()=>window.setPump("auto"));
+document.getElementById("btnManual").addEventListener("click", ()=>window.setPump("manual"));
+document.getElementById("btnOutOn").addEventListener("click", ()=>window.setPumpManual("pump_out","on"));
+document.getElementById("btnOutOff").addEventListener("click", ()=>window.setPumpManual("pump_out","off"));
+document.getElementById("btnInOn").addEventListener("click", ()=>window.setPumpManual("pump_in","on"));
+document.getElementById("btnInOff").addEventListener("click", ()=>window.setPumpManual("pump_in","off"));
+</script>
+</body>
+</html>
