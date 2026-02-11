@@ -17,6 +17,7 @@ body {
   background: linear-gradient(135deg,#a8edea,#fed6e3);
   color:#333;
   min-height:100vh;
+  padding: 10px;
 }
 .container {
   max-width:1200px;
@@ -68,6 +69,7 @@ h1 {
   color:#fff;
   display:inline-block;
   min-width:80px;
+  transition:0.3s;
 }
 .status.healthy{background:#27ae60;}
 .status.deceased{background:#c0392b;}
@@ -136,6 +138,16 @@ button.manual{background:#3498db;}
   </div>
 
   <div class="card">
+    <h3>Temperature</h3>
+    <div id="temperature" class="status unknown">---</div>
+  </div>
+
+  <div class="card">
+    <h3>Humidity</h3>
+    <div id="humidity" class="status unknown">---</div>
+  </div>
+
+  <div class="card">
     <h3>Pump Status</h3>
     <div>Pump OUT: <span id="pumpOut" class="badge off">---</span></div>
     <div>Pump IN: <span id="pumpIn" class="badge off">---</span></div>
@@ -185,6 +197,14 @@ onValue(ref(db, "/plant/status"), snap => {
 
 onValue(ref(db, "/sensor/soil"), snap => {
   document.getElementById("soilValue").textContent = snap.val() || "---";
+});
+
+onValue(ref(db, "/sensor/temperature"), snap => {
+  document.getElementById("temperature").textContent = snap.val() || "---";
+});
+
+onValue(ref(db, "/sensor/humidity"), snap => {
+  document.getElementById("humidity").textContent = snap.val() || "---";
 });
 
 onValue(ref(db, "/state/pump_out"), snap => {
